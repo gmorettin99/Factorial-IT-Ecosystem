@@ -730,10 +730,12 @@ const modal = document.getElementById('modal');
 const demo  = document.getElementById('demo');
 let modalOpen = false;
 
-/* one clip per block; the files sit next to this page */
+/* one clip per block; the files sit next to this page.
+   Each block lists candidates in order: the light .mp4 first, the original .mov after,
+   so it works whichever of the two you upload. */
 const CLIPS = {
-  inventario:  'inventario-one.mp4',
-  marketplace: 'marketplace-one.mp4'
+  inventario:  ['inventario-one.mp4',  'Inventario_add-ca-via-One.mov'],
+  marketplace: ['marketplace-one.mp4', 'Marketplace_suggest-pc-for-design-team-via-One.mov']
 };
 let currentClip = '';
 const fallback = modal.querySelector('.fallback');
@@ -746,18 +748,26 @@ demo.addEventListener('error', showFallback);
 
 const picker = fallback.querySelector('.picker');
 fallback.querySelector('.pick').onclick = ()=> picker.click();
-picker.onchange = ()=>{ if(picker.files[0]){ currentClip = 'picked'; useFile(URL.createObjectURL(picker.files[0])); } };
+picker.onchange = ()=>{ if(picker.files[0]){ currentClip = ''; useFile(URL.createObjectURL(picker.files[0])); } };
 
-function openModal(file){
+function openModal(id){
   modalOpen = true;
   modal.classList.add('on');
-  if(file !== currentClip){                        // switching block: load its clip
-    currentClip = file;
+  if(id !== currentClip){                          // switching block: load its clip
+    currentClip = id;
     demo.hidden = false; fallback.hidden = true;
-    demo.src = file;
+    demo.innerHTML = ''; demo.removeAttribute('src');
+    CLIPS[id].forEach((f, i, all)=>{
+      const src = document.createElement('source');
+      src.src = f;
+      if(f.endsWith('.mp4')) src.type = 'video/mp4';   // no type on .mov: let the browser sniff it
+      // a media element with <source> children never fires 'error' on itself
+      if(i === all.length - 1) src.addEventListener('error', showFallback);
+      demo.appendChild(src);
+    });
     demo.load();
   }
-  fallback.querySelector('.name').textContent = file;
+  fallback.querySelector('.name').textContent = CLIPS[id][0];
   if(demo.hidden){ modal.focus(); return; }        // this clip already failed: show the picker
   demo.currentTime = 0;
   demo.play().catch(()=>{});
@@ -774,7 +784,7 @@ nodes.addEventListener('click', e=>{
   const card = e.target.closest('.card');
   if(!card || !card.classList.contains('on')) return;
   const id = card.closest('.branch').id.replace('b-','');
-  if(CLIPS[id]) openModal(CLIPS[id]);
+  if(CLIPS[id]) openModal(id);
 });
 modal.addEventListener('click', e=>{ if(e.target === modal) closeModal(); });
 modal.querySelector('.x').onclick = closeModal;
