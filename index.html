@@ -113,8 +113,10 @@
   }
 
   /* ---------- demo video overlay ---------- */
-  #b-inventario .card{cursor:pointer}
-  #b-inventario .card:hover{box-shadow:0 18px 42px rgba(120,0,30,.30), 0 2px 8px rgba(120,0,30,.14)}
+  #b-inventario .card, #b-marketplace .card{cursor:pointer}
+  #b-inventario .card:hover, #b-marketplace .card:hover{
+    box-shadow:0 18px 42px rgba(120,0,30,.30), 0 2px 8px rgba(120,0,30,.14);
+  }
   #modal{
     position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
     background:rgba(105,0,26,.58);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
@@ -239,7 +241,7 @@
       <video id="demo" playsinline controls preload="metadata"></video>
       <div class="fallback" hidden>
         <p>Non riesco a caricare il video.<br>
-        Tieni <code>inventario-one.mp4</code> nella stessa cartella di questo file,
+        Tieni <code class="name">inventario-one.mp4</code> nella stessa cartella di questo file,
         oppure selezionalo a mano qui sotto.</p>
         <button class="pick" type="button">Scegli il file video…</button>
         <input class="picker" type="file" accept="video/*" hidden>
@@ -728,42 +730,37 @@ const modal = document.getElementById('modal');
 const demo  = document.getElementById('demo');
 let modalOpen = false;
 
-/* the clip sits next to this file; ?video=<url> points it somewhere else (e.g. a hosted copy) */
-const videoParam = new URLSearchParams(location.search).get('video');
-if(videoParam){
-  demo.src = videoParam;
-} else {
-  [['inventario-one.mp4','video/mp4'], ['inventario-one.webm','video/webm']].forEach(([f,t])=>{
-    const src = document.createElement('source');
-    src.src = f; src.type = t;
-    demo.appendChild(src);
-  });
-  demo.load();
-}
+/* one clip per block; the files sit next to this page */
+const CLIPS = {
+  inventario:  'inventario-one.mp4',
+  marketplace: 'marketplace-one.mp4'
+};
+let currentClip = '';
 const fallback = modal.querySelector('.fallback');
 function showFallback(){ demo.hidden = true; fallback.hidden = false; }
 function useFile(url){
   demo.src = url; demo.hidden = false; fallback.hidden = true;
   demo.load(); if(modalOpen) demo.play().catch(()=>{});
 }
-// a media element with <source> children fires 'error' on the sources, never on itself
 demo.addEventListener('error', showFallback);
-[...demo.querySelectorAll('source')].forEach((el, _, all)=>{
-  let failed = 0;
-  el.addEventListener('error', ()=>{ if(++failed >= 1 && demo.networkState === 3) showFallback(); });
-});
 
 const picker = fallback.querySelector('.picker');
 fallback.querySelector('.pick').onclick = ()=> picker.click();
-picker.onchange = ()=>{ if(picker.files[0]) useFile(URL.createObjectURL(picker.files[0])); };
+picker.onchange = ()=>{ if(picker.files[0]){ currentClip = 'picked'; useFile(URL.createObjectURL(picker.files[0])); } };
 
-function openModal(){
+function openModal(file){
   modalOpen = true;
   modal.classList.add('on');
-  if(demo.hidden){ modal.focus(); return; }        // already failed: show the picker instead
+  if(file !== currentClip){                        // switching block: load its clip
+    currentClip = file;
+    demo.hidden = false; fallback.hidden = true;
+    demo.src = file;
+    demo.load();
+  }
+  fallback.querySelector('.name').textContent = file;
+  if(demo.hidden){ modal.focus(); return; }        // this clip already failed: show the picker
   demo.currentTime = 0;
   demo.play().catch(()=>{});
-  // nothing loaded and no source left to try
   setTimeout(()=>{ if(demo.networkState === 3 || (demo.readyState === 0 && demo.error)) showFallback(); }, 1200);
   modal.focus();                       // not the close button: Space would activate it
 }
@@ -774,8 +771,10 @@ function closeModal(){
   ppBtn.focus();                       // hand the keyboard back to the map
 }
 nodes.addEventListener('click', e=>{
-  const card = e.target.closest('#b-inventario .card');
-  if(card && card.classList.contains('on')) openModal();
+  const card = e.target.closest('.card');
+  if(!card || !card.classList.contains('on')) return;
+  const id = card.closest('.branch').id.replace('b-','');
+  if(CLIPS[id]) openModal(CLIPS[id]);
 });
 modal.addEventListener('click', e=>{ if(e.target === modal) closeModal(); });
 modal.querySelector('.x').onclick = closeModal;
