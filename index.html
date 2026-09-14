@@ -113,8 +113,8 @@
   }
 
   /* ---------- demo video overlay ---------- */
-  #b-inventario .card, #b-marketplace .card, #b-saas .card{cursor:pointer}
-  #b-inventario .card:hover, #b-marketplace .card:hover, #b-saas .card:hover{
+  #b-inventario .card, #b-marketplace .card, #b-saas .card, #b-helpdesk .card{cursor:pointer}
+  #b-inventario .card:hover, #b-marketplace .card:hover, #b-saas .card:hover, #b-helpdesk .card:hover{
     box-shadow:0 18px 42px rgba(120,0,30,.30), 0 2px 8px rgba(120,0,30,.14);
   }
   #modal{
@@ -736,7 +736,8 @@ let modalOpen = false;
 const CLIPS = {
   inventario:  ['inventario-one.mp4',  'Inventario_add-ca-via-One.mov'],
   marketplace: ['marketplace-one.mp4', 'Marketplace_suggest-pc-for-design-team-via-One.mov'],
-  saas:        ['saas-one.mp4',        'saas-spending-one.mov']
+  saas:        ['saas-one.mp4',        'saas-spending-one.mov'],
+  helpdesk:    ['helpdesk-one.mp4',    'ticketing-one.mov']
 };
 let currentClip = '';
 const fallback = modal.querySelector('.fallback');
