@@ -51,13 +51,6 @@
   }
   svg#wires path.twig{stroke:rgba(255,255,255,.46);stroke-width:1.9}
 
-  /* shared bucket panel behind Gestione Dispositivi + Gestione SaaS */
-  #bucket{
-    fill:rgba(255,255,255,.11);
-    stroke:rgba(255,255,255,.34);stroke-width:1.6;
-    opacity:0;transition:opacity .9s ease;
-  }
-  #bucket.on{opacity:1}
 
   /* ---------- centre avatar ---------- */
   #hub{
@@ -426,7 +419,7 @@ function seed(l, n){
 buildNodes(lang);
 document.querySelectorAll('.label').forEach(l=>seed(l,0));
 
-/* longer languages get a touch smaller so nothing escapes the frame or the bucket */
+/* longer languages get a touch smaller so nothing escapes the frame */
 function fitBoard(){
   const R = document.documentElement, st = document.getElementById('stage');
   for(let k = 1; k >= 0.84; k -= 0.025){
@@ -459,31 +452,8 @@ function mkPath(d, cls){
   wires.appendChild(p); return p;
 }
 const wireOf = {};
-const BUCKET = ['dispositivi','saas'];   // same bucket -> one shared panel
-
-function drawBucket(){
-  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  BUCKET.forEach(id=>{
-    const c = centre(document.getElementById('b-'+id));
-    x0=Math.min(x0,c.l); x1=Math.max(x1,c.r);
-    y0=Math.min(y0,c.t); y1=Math.max(y1,c.b);
-  });
-  // horizontally: one band centred on the hub, so it reads as a single bucket
-  const pad = 26, LIMIT = 758;
-  const half = Math.min(LIMIT, Math.max(HUB.x - x0, x1 - HUB.x) + pad);
-  x0 = HUB.x - half; x1 = HUB.x + half;
-  y0 = y0 - pad; y1 = y1 + pad;
-  const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  r.setAttribute('id','bucket');
-  r.setAttribute('x',x0); r.setAttribute('y',y0);
-  r.setAttribute('width',x1-x0); r.setAttribute('height',y1-y0);
-  r.setAttribute('rx',30);
-  wires.appendChild(r);
-}
-
 function layoutWires(){
   wires.innerHTML='';
-  drawBucket();
   BRANCHES.forEach(b=>{
     const el = document.getElementById('b-'+b.id);
     const card = el.querySelector('.card');
@@ -564,7 +534,6 @@ async function play(){
     document.querySelectorAll('.label').forEach(l=>seed(l, l.dataset.text.length));
     document.querySelectorAll('.card,.chip,#hub,#one').forEach(e=>e.style.opacity=1);
     Object.values(wireOf).forEach(w=>[w.main,...w.twigs].forEach(p=>p.style.strokeDashoffset=0));
-    document.getElementById('bucket').classList.add('on');
     finish(token);
     return;
   }
@@ -594,10 +563,6 @@ async function play(){
       await wait(120);
       await type(chips[i].querySelector('.label'), token);
       await wait(60);
-    }
-    if(BUCKET.includes(b.id) && BUCKET.every(id=>document.querySelector('#b-'+id+' .card').classList.contains('on'))){
-      const bk = document.getElementById('bucket');
-      if(bk && !bk.classList.contains('on')){ bk.classList.add('on'); await wait(500); }
     }
     await wait(240);
     turbo = false;
